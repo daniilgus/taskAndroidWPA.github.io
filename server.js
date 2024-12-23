@@ -9,7 +9,7 @@ const port = 3000;
 // Настройка подключения к базе данных
 const pool = new Pool({
     user: 'postgres',
-    host: '192.168.136.124',
+    host: 'localhost',
     database: 'TMandroid',
     password: 'admin',
     port: 5432,
