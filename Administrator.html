@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        .user_container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 400px;
+        }
+
+        h1, h2 {
+            color: #66bb6a;
+            text-align: center;
+        }
+
+        #userList {
+            list-style-type: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin: 20px 0;
+        }
+
+        li {
+            padding: 10px;
+            border: 1px solid #444;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: #2a2a2a;
+            transition: background-color 0.3s, transform 0.2s;
+            cursor: pointer;
+        }
+
+        li:hover {
+            background-color: #3a3a3a;
+            transform: scale(1.02);
+        }
+
+        input, select {
+            margin: 10px 0;
+            padding: 10px;
+            width: calc(100% - 22px);
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: #ffffff;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border: 2px solid #66bb6a;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #66bb6a;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #57a052;
+            transform: scale(1.05);
+        }
+
+        /* Стили для кастомной полосы прокрутки */
+        ::-webkit-scrollbar {
+            width: 10px; /* Ширина полосы прокрутки */
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e; /* Цвет фона полосы прокрутки */
+            border-radius: 10px; /* Скругление углов */
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #66bb6a; /* Цвет ползунка */
+            border-radius: 10px; /* Скругление углов */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #57a052; /* Цвет ползунка при наведении */
+        }
+
+        /* Стили для модального окна */
+        #salaryModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #salaryModal div {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="user_container">
+        <h1>Управление пользователями</h1>
+        
+        <label for="search">Поиск:</label>
+        <input type="text" id="search" placeholder="Введите имя или фамилию" oninput="searchUsers()">
+        
+        <h2>Список пользователей:</h2>
+        <ul id="userList" onclick="selectUser (event)">
+            <!-- Список пользователей будет загружен сюда -->
+        </ul>
+        
+        <label for="firstName">Имя:</label>
+        <input type="text" id="firstName" placeholder="Имя">
+        
+        <label for="lastName">Фамилия:</label>
+        <input type="text" id="lastName" placeholder="Фамилия">
+
+        <label for="salary">Зарплата:</label>
+        <input type="text" id="salary" placeholder="Зарплата" disabled> <!-- Поле для зарплаты, можно сделать редактируемым, если нужно -->
+
+        <label for="role">Роль:</label>
+        <select id="role">
+            <option value="Админ">Админ</option>
+            <option value="Менеджер">Менеджер</option>
+            <option value="Исполнитель">Исполнитель</option>
+        </select>
+        
+        <button onclick="updateUser ()">Обновить пользователя</button>
+        <button onclick="deleteUser ()">Удалить пользователя</button>
+        <button onclick="clearFields()">Очистить поля</button>
+        <button onclick="logout()">Выход</button> <!-- Кнопка выхода -->
+        <button onclick="showSalaryInfo()">Показать зарплату</button> <!-- Кнопка для показа расчета зарплаты -->
+    </div>
+
+    <!-- Модальное окно для расчета зарплаты -->
+    <div id="salaryModal">
+        <div>
+            <h2>Расчет зарплаты</h2>
+            <p id="salaryDetails"></p>
+            <button onclick="closeSalaryModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        async function loadUsers() {
+            try {
+                const response = await fetch('http://localhost:3000/users');
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.statusText);
+                }
+                const users = await response.json();
+                const userList = document.getElementById('userList');
+
+                userList.innerHTML = ''; // Очистка списка пользователей
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = `${user.firstname} ${user.lastname} (${user.role})`; // Убрали зарплату из списка
+                    li.setAttribute('data-user-id', user.userid);
+                    li.setAttribute('data-firstname', user.firstname);
+                    li.setAttribute('data-lastname', user.lastname);
+                    li.setAttribute('data-role', user.role);
+                    li.setAttribute('data-salary', user.salary); // Убедитесь, что это значение корректно
+                    userList.appendChild(li);
+                });
+
+            } catch (error) {
+                console.error('Ошибка при загрузке пользователей:', error);
+            }
+        }
+
+        function selectUser (event) {
+            const li = event.target.closest('li');
+            if (!li) return;
+
+            const userListItems = document.querySelectorAll('#userList li');
+            userListItems.forEach(item => item.classList.remove('selected'));
+            li.classList.add('selected'); // Добавляем класс выделения
+
+            const firstname = li.getAttribute('data-firstname');
+            const lastname = li.getAttribute('data-lastname');
+            const role = li.getAttribute('data-role'); // Получаем название роли
+            const salary = li.getAttribute('data-salary'); // Получаем зарплату
+
+            document.getElementById('firstName').value = firstname;
+            document.getElementById('lastName').value = lastname;
+            document.getElementById('role').value = role; // Устанавливаем строку напрямую
+            document.getElementById('salary').value = salary; // Устанавливаем зарплату в поле
+        }
+
+        async function updateUser () {
+            const selectedLi = document.querySelector('#userList .selected');
+            if (!selectedLi) {
+                alert('Пожалуйста, выберите пользователя для обновления.');
+                return;
+            }
+
+            const userId = selectedLi.getAttribute('data-user-id');
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const roleName = document.getElementById('role').value; // Получаем название роли
+            const salary = document.getElementById('salary').value; // Получаем зарплату
+
+            try {
+                const response = await fetch(`http://localhost:3000/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ firstName, lastName, role: roleName, salary }), // Добавлено поле salary
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.statusText);
+                }
+
+                loadUsers(); // Перезагрузите список пользователей после обновления
+            } catch (error) {
+                console.error('Ошибка при обновлении пользователя:', error);
+            }
+        }
+
+        async function deleteUser () {
+            const selectedLi = document.querySelector('#userList .selected');
+            if (!selectedLi) {
+                alert('Пожалуйста, выберите пользователя для удаления.');
+                return;
+            }
+
+            const userId = selectedLi.getAttribute('data-user-id');
+
+            try {
+                const response = await fetch(`http://localhost:3000/users/${userId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.statusText);
+                }
+
+                loadUsers(); // Перезагрузите список пользователей после удаления
+            } catch (error) {
+                console.error('Ошибка при удалении пользователя:', error);
+            }
+        }
+
+        function clearFields() {
+            document.getElementById('firstName').value = '';
+            document.getElementById('lastName').value = '';
+            document.getElementById('role').value = 'Админ'; // Сброс на значение по умолчанию (Админ)
+            document.getElementById('salary').value = ''; // Очистка поля зарплаты
+            const userListItems = document.querySelectorAll('#userList li');
+            userListItems.forEach(item => item.classList.remove('selected')); // Удаляем выделение
+        }
+
+        async function searchUsers() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const response = await fetch('http://localhost:3000/users');
+            const users = await response.json();
+
+            const userList = document.getElementById('userList');
+            userList.innerHTML = ''; // Очистка списка пользователей
+
+            const filteredUsers = users.filter(user => 
+                user.firstname.toLowerCase().includes(searchTerm) || 
+                user.lastname.toLowerCase().includes(searchTerm)
+            );
+
+            filteredUsers.forEach(user => {
+                const li = document.createElement('li');
+                li.textContent = `${user.firstname} ${user.lastname} (${user.role})`;
+                li.setAttribute('data-user-id', user.userid);
+                li.setAttribute('data-firstname', user.firstname);
+                li.setAttribute('data-lastname', user.lastname);
+                li.setAttribute('data-role', user.role);
+                userList.appendChild(li);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadUsers);
+        
+        function logout() {
+            // Здесь вы можете добавить логику для выхода, например, удаление токена или редирект на страницу входа
+            window.location.href = 'index.html'; // Перенаправление на страницу входа
+        }
+
+        function showSalaryInfo() {
+            const selectedLi = document.querySelector('#userList .selected');
+            if (!selectedLi) {
+                alert('Пожалуйста, выберите пользователя для расчета зарплаты.');
+                return;
+            }
+
+            const salary = parseFloat(selectedLi.getAttribute('data-salary'));
+            if (isNaN(salary)) {
+                alert('Зарплата не указана для выбранного пользователя.');
+                return;
+            }
+
+            const bonusPercent = prompt('Введите процент премии (например, 10 для 10%):');
+            const bonus = (bonusPercent / 100) * salary;
+
+            const totalMonthlySalary = salary + bonus;
+            const totalYearlySalary = (salary * 12) + (bonus * 12);
+
+            const salaryDetails = `
+                Зарплата за месяц с учетом премии: ${totalMonthlySalary.toFixed(2)} <br>
+                Зарплата за год с учетом премии: ${totalYearlySalary.toFixed(2)} <br>
+                Сумма премии: ${bonus.toFixed(2)}
+            `;
+
+            document.getElementById('salaryDetails').innerHTML = salaryDetails;
+            document.getElementById('salaryModal').style.display = 'flex'; // Показываем модальное окно
+        }
+
+        function closeSalaryModal() {
+            document.getElementById('salaryModal').style.display = 'none'; // Закрываем модальное окно
+        }
+    </script>
+</body>
+</html>

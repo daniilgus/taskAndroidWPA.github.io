@@ -1,0 +1,464 @@
+admin.html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .user_container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 400px;
+        }
+        h1, h2 {
+            color: #66bb6a;
+            text-align: center;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        li {
+            padding: 10px;
+            border: 1px solid #444;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: #2a2a2a;
+            transition: background-color 0.3s, transform 0.2s;
+            cursor: pointer;
+        }
+        li:hover {
+            background-color: #3a3a3a;
+            transform: scale(1.02);
+        }
+        input, select {
+            margin: 10px 0;
+            padding: 10px;
+            width: calc(100% - 22px);
+            border: none;
+            border-radius: 5px;
+            background-color: #333;
+            color: #ffffff;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border: 2px solid #66bb6a;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #66bb6a;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #57a052;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="user_container">
+        <h1>Управление пользователями</h1>
+        
+        <h2>Список пользователей:</h2>
+        <ul id="userList" onclick="selectUser (event)">
+            <!-- Список пользователей будет загружен сюда -->
+        </ul>
+        
+        <label for="firstName">Имя:</label>
+        <input type="text" id="firstName" placeholder="Имя">
+        
+        <label for="lastName">Фамилия:</label>
+        <input type="text" id="lastName" placeholder="Фамилия">
+        
+        <label for="role">Роль:</label>
+        <select id="role">
+            <option value="Админ">Админ</option>
+            <option value="Менеджер">Менеджер</option>
+            <option value="Исполнитель">Исполнитель</option>
+        </select>
+        
+        
+        <button onclick="updateUser ()">Обновить пользователя</button>
+        <button onclick="deleteUser ()">Удалить пользователя</button>
+        <button onclick="clearFields()">Очистить поля</button>
+    </div>
+
+    <script>
+        async function loadUsers() {
+            try {
+                const response = await fetch('http://localhost:3000/users');
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.statusText);
+                }
+                const users = await response.json();
+                const userList = document.getElementById('userList');
+
+                userList.innerHTML = ''; // Очистка списка пользователей
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = `${user.firstname} ${user.lastname} (${user.role})`;
+                    li.setAttribute('data-user-id', user.userid);
+                    li.setAttribute('data-firstname', user.firstname);
+                    li.setAttribute('data-lastname', user.lastname);
+                    li.setAttribute('data-role', user.role);
+                    userList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Ошибка при загрузке пользователей:', error);
+            }
+        }
+
+        function selectUser (event) {
+            const li = event.target.closest('li');
+            if (!li) return;
+
+            const userListItems = document.querySelectorAll('#userList li');
+            userListItems.forEach(item => item.classList.remove('selected'));
+            li.classList.add('selected'); // Добавляем класс выделения
+
+            const firstname = li.getAttribute('data-firstname');
+            const lastname = li.getAttribute('data-lastname');
+            const role = li.getAttribute('data-role'); // Получаем название роли
+
+            console.log('Выбранный пользователь:', firstname, lastname, role); // Отладочное сообщение
+
+            document.getElementById('firstName').value = firstname;
+            document.getElementById('lastName').value = lastname;
+
+            // Устанавливаем значение роли
+            document.getElementById('role').value = role; // Устанавливаем строку напрямую
+        }
+
+
+
+
+        // Массив ролей
+            const roles = [
+                { id: 1, name: 'Админ' },
+                { id: 2, name: 'Исполнитель' },
+                { id: 3, name: 'Менеджер' }
+            ];
+
+            // Функция для получения ID роли по названию
+            function getRoleId(roleName) {
+                const role = roles.find(r => r.name === roleName);
+                return role ? role.id : null; // Возвращаем ID роли или null, если не найдено
+            }
+
+            // Функция для обновления пользователя
+            async function updateUser () {
+                const selectedLi = document.querySelector('#userList .selected');
+                if (!selectedLi) {
+                    alert('Пожалуйста, выберите пользователя для обновления.');
+                    return;
+                }
+
+                const userId = selectedLi.getAttribute('data-user-id');
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const roleName = document.getElementById('role').value; // Получаем название роли
+                const roleId = getRoleId(roleName); // Получаем ID роли
+
+                console.log('Обновляемые данные:', { firstName, lastName, role: roleId }); // Для отладки
+
+                try {
+                    const response = await fetch(`http://localhost:3000/users/${userId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ firstName, lastName, role: roleId }), // Отправляем данные
+                    });
+
+                    const data = await response.json();
+                    console.log('Ответ от сервера:', data); // Для отладки
+
+                    if (!response.ok) {
+                        throw new Error('Ошибка сети: ' + response.statusText);
+                    }
+
+                    loadUsers(); // Перезагрузите список пользователей после обновления
+                } catch (error) {
+                    console.error('Ошибка при обновлении пользователя:', error);
+                }
+            }
+
+
+        async function deleteUser () {
+            const selectedLi = document.querySelector('#userList .selected');
+            if (!selectedLi) {
+                alert('Пожалуйста, выберите пользователя для удаления.');
+                return;
+            }
+
+            const userId = selectedLi.getAttribute('data-user-id');
+
+            try {
+                const response = await fetch(`http://localhost:3000/users/${userId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка сети: ' + response.statusText);
+                }
+
+                loadUsers(); // Перезагрузите список пользователей после удаления
+            } catch (error) {
+                console.error('Ошибка при удалении пользователя:', error);
+            }
+        }
+
+        function clearFields() {
+            document.getElementById('firstName').value = '';
+            document.getElementById('lastName').value = '';
+            document.getElementById('role').value = '1'; // Сброс на значение по умолчанию (Админ)
+            const userListItems = document.querySelectorAll('#userList li');
+            userListItems.forEach(item => item.classList.remove('selected')); // Удаляем выделение
+        }
+
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+</html>
+
+server.js
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+        }
+        .login-container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+        h2 {
+            text-align: center;
+            color: #66bb6a;
+        }
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #66bb6a;
+            border-radius: 5px;
+            background-color: #333;
+            color: #ffffff;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #66bb6a;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #66bb6a;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #57a052;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Авторизация</h2>
+        <input type="text" id="username" placeholder="Логин" required>
+        <input type="password" id="password" placeholder="Пароль" required>
+        <button onclick="login()">Вход</button>
+    </div>
+
+    <script>
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+    
+            const response = await fetch('http://localhost:3000/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ login: username, password: password })
+            });
+    
+            const data = await response.json();
+            if (data.success) {
+                // Успешная авторизация, перенаправление на страницу администратора
+                window.location.href = 'administrator.html';
+            } else {
+                alert(data.message);
+            }
+        }
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+    
+</body>
+</html>
+
+autorization.html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+        }
+        .login-container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+        h2 {
+            text-align: center;
+            color: #66bb6a;
+        }
+        input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #66bb6a;
+            border-radius: 5px;
+            background-color: #333;
+            color: #ffffff;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #66bb6a;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #66bb6a;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #57a052;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Авторизация</h2>
+        <input type="text" id="username" placeholder="Логин" required>
+        <input type="password" id="password" placeholder="Пароль" required>
+        <button onclick="login()">Вход</button>
+    </div>
+
+    <script>
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+    
+            const response = await fetch('http://localhost:3000/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ login: username, password: password })
+            });
+    
+            const data = await response.json();
+            if (data.success) {
+                // Успешная авторизация, перенаправление на страницу администратора
+                window.location.href = 'administrator.html';
+            } else {
+                alert(data.message);
+            }
+        }
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+    
+</body>
+</html>

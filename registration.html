@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+        }
+        .registration-container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+        h2 {
+            text-align: center;
+            color: #66bb6a;
+        }
+        input, select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #66bb6a;
+            border-radius: 5px;
+            background-color: #333;
+            color: #ffffff;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #66bb6a;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #66bb6a;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background-color: #57a052;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="registration-container">
+        <h2>Регистрация</h2>
+        <input type="text" id="firstName" placeholder="Имя" required>
+        <input type="text" id="lastName" placeholder="Фамилия" required>
+        <input type="text" id="username" placeholder="Логин" required>
+        <input type="password" id="password" placeholder="Пароль" required>
+        <select id="role">
+            <option value="Админ">Админ</option>
+            <option value="Менеджер">Менеджер</option>
+            <option value="Исполнитель">Исполнитель</option>
+        </select>
+        <button onclick="register()">Зарегистрироваться</button>
+    </div>
+
+    <script>
+        async function register() {
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const login = document.getElementById('username').value; // Изменено на login
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ firstName, lastName, login, password, role }), // Изменено на login
+                });
+
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.message || 'Ошибка при регистрации');
+                }
+
+                const result = await response.json();
+                alert('Пользователь зарегистрирован успешно');
+
+                // Перенаправление на страницу управления пользователями
+                window.location.href = 'Administrator.html'; // Замените на реальный URL
+
+            } catch (error) {
+                console.error('Ошибка при отправке данных:', error);
+                alert('Произошла ошибка при регистрации: ' + error.message);
+            }
+        }
+
+    </script>
+    
+</body>
+</html>
