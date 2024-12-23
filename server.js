@@ -74,7 +74,7 @@ app.put('/users/:id', async (req, res) => {
 });
 
 // Функция для сохранения нового пользователя в базе данных
-async function saveUser ToDatabase(user) {
+async function saveUserToDatabase(user) {
     const { firstName, lastName, login, password, role } = user;
 
     // Проверка, существует ли роль
@@ -101,7 +101,7 @@ app.post('/register', async (req, res) => {
         }
 
         // Пример вызова функции для сохранения пользователя
-        await saveUser ToDatabase({ firstName, lastName, login, password, role });
+        await saveUserToDatabase({ firstName, lastName, login, password, role });
 
         // Если все прошло успешно
         res.status(200).json({ message: 'Пользователь зарегистрирован успешно' });
