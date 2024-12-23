@@ -9,9 +9,9 @@ const port = 3000;
 // Настройка подключения к базе данных
 const pool = new Pool({
     user: 'postgres',
-    host: 'localhost',
-    database: 'TMandroid',
-    password: 'admin',
+    host: 'postgres.railway.internal',
+    database: 'railway',
+    password: 'DDCBPiqrSGjagoiQdczkEvfzdSYPzuCc',
     port: 5432,
 });
 
