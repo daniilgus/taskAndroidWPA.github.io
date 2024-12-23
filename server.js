@@ -4,7 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // Используем переменную окружения PORT
 
 // Настройка подключения к базе данных
 const pool = new Pool({
@@ -47,7 +47,6 @@ app.get('/users', async (req, res) => {
     }
 });
 
-
 // Эндпоинт для обновления пользователя
 app.put('/users/:id', async (req, res) => {
     const { id } = req.params; // Получаем ID пользователя из URL
@@ -66,7 +65,7 @@ app.put('/users/:id', async (req, res) => {
 
         // Обновление пользователя
         await pool.query('UPDATE Users SET FirstName = \$1, LastName = \$2, RoleID = \$3 WHERE UserID = \$4', 
-            [firstName, lastName, roleID, id]); // Убираем Login, если он не нужен
+            [firstName, lastName, roleID, id]);
         res.status(200).json({ message: 'Пользователь успешно обновлён' });
     } catch (error) {
         console.error('Ошибка при обновлении пользователя:', error);
@@ -74,12 +73,9 @@ app.put('/users/:id', async (req, res) => {
     }
 });
 
-
-
-
 // Функция для сохранения нового пользователя в базе данных
-async function saveUserToDatabase(user) {
-    const { firstName, lastName, login, password, role } = user; // Изменено на login
+async function saveUser ToDatabase(user) {
+    const { firstName, lastName, login, password, role } = user;
 
     // Проверка, существует ли роль
     const roleResult = await pool.query('SELECT RoleID FROM Roles WHERE RoleName = \$1', [role]);
@@ -91,27 +87,27 @@ async function saveUserToDatabase(user) {
 
     // Вставка нового пользователя
     await pool.query('INSERT INTO Users (FirstName, LastName, Login, Password, RoleID) VALUES (\$1, \$2, \$3, \$4, \$5)', 
-        [firstName, lastName, login, password, roleID]); // Изменено на login
+        [firstName, lastName, login, password, roleID]);
 }
 
 // Эндпоинт для регистрации нового пользователя
 app.post('/register', async (req, res) => {
     try {
-        const { firstName, lastName, login, password, role } = req.body; // Изменено на login
+        const { firstName, lastName, login, password, role } = req.body;
 
         // Валидация входящих данных
-        if (!firstName || !lastName || !login || !password || !role) { // Изменено на login
+        if (!firstName || !lastName || !login || !password || !role) {
             return res.status(400).json({ message: 'Все поля обязательны для заполнения' });
         }
 
         // Пример вызова функции для сохранения пользователя
-        await saveUserToDatabase({ firstName, lastName, login, password, role }); // Изменено на login
+        await saveUser ToDatabase({ firstName, lastName, login, password, role });
 
         // Если все прошло успешно
         res.status(200).json({ message: 'Пользователь зарегистрирован успешно' });
     } catch (error) {
-        console.error('Ошибка при регистрации:', error); // Логирование ошибки
-        res.status(500).json({ message: error.message || 'Ошибка сервера' }); // Отправка ответа с ошибкой
+        console.error('Ошибка при регистрации:', error);
+        res.status(500).json({ message: error.message || 'Ошибка сервера' });
     }
 });
 
@@ -134,7 +130,6 @@ app.post('/login', async (req, res) => {
         res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 });
-
 
 // Эндпоинт для удаления пользователя
 app.delete('/users/:id', async (req, res) => {
